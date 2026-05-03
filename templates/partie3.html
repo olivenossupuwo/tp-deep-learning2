@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Partie 3 – Deep Learning Fashion MNIST{% endblock %}
+{% block content %}
+<main>
+  <div class="hero" style="padding:2.5rem 1rem 1.5rem;">
+    <span class="badge badge-p3"><i class="ph ph-images"></i> Partie 3 · Deep Learning</span>
+    <h1 style="font-size:clamp(1.7rem,4.5vw,2.8rem);">Classificateur <em>d'Images</em></h1>
+    <p>Dessinez un vêtement et le CNN le reconnaît parmi 10 catégories Fashion MNIST en temps réel.</p>
+  </div>
+
+  <!-- Architectures -->
+  <div class="card-grid" style="margin-bottom:1.25rem;">
+    {% for name, acc, desc, icon in [("LeNet-5","~89%","Architecture pionnière (1998). 2 couches conv + pooling avg. Base historique des CNN.","ph-circles-three"),("VGGNet Simplifié","~92%","Blocs Conv 3×3 empilés avec BatchNorm. Architecture profonde et efficace.","ph-stack"),("ResNet Simplifié","~93%","Skip connections résiduelles. Résout le problème du gradient qui disparaît.","ph-git-merge")] %}
+    <div class="card d{{loop.index}}" style="border-left:3px solid var(--p3);">
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem;">
+        <i class="ph-bold ph-{{icon}}" style="color:var(--p3);font-size:1.2rem;"></i>
+        <strong style="font-family:var(--font-head);">{{name}}</strong>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.85rem;">{{desc}}</p>
+      <div style="margin-top:0.7rem;font-size:0.82rem;">Accuracy test : <strong style="color:var(--p1);">{{acc}}</strong></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Zone de dessin -->
+  <div class="card d2">
+    <h3 style="font-family:var(--font-head);font-size:1.2rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.5rem;">
+      <i class="ph ph-pencil" style="color:var(--p3);"></i> Dessinez un vêtement
+    </h3>
+    <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:1.5rem;">Tracez un article de mode dans le cadre ci-dessous. Trait épais, centré. Le CNN classe parmi 10 catégories.</p>
+
+    <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <canvas id="draw-canvas" width="280" height="280"></canvas>
+        <div style="display:flex;gap:0.6rem;margin-top:0.8rem;">
+          <button class="btn btn-p3" onclick="classifyDrawing()" id="btn-classify">
+            <i class="ph ph-magnifying-glass"></i> <span id="btn-classify-text">Classifier</span>
+          </button>
+          <button class="btn btn-ghost" onclick="clearCanvas()">
+            <i class="ph ph-trash"></i> Effacer
+          </button>
+        </div>
+        <p style="color:var(--text-muted);font-size:0.75rem;margin-top:0.5rem;">
+          <i class="ph ph-lightbulb"></i> Conseil : dessinez simplement, trait épais, bien centré.
+        </p>
+      </div>
+
+      <div style="flex:1;min-width:220px;">
+        <div id="result-p3-box" style="display:none;animation:fadeUp 0.4s ease both;">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">
+            <div style="font-size:2.8rem;" id="r3-emoji"></div>
+            <div>
+              <div style="font-family:var(--font-head);font-size:1.6rem;font-weight:600;color:var(--p3);" id="r3-label"></div>
+              <div style="color:var(--text-muted);font-size:0.85rem;" id="r3-conf"></div>
+            </div>
+          </div>
+          <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.7rem;">Top 3 prédictions</div>
+          <div id="top3-container"></div>
+        </div>
+        <div id="r3-placeholder" style="color:var(--text-muted);font-size:0.9rem;padding:2rem 0;display:flex;align-items:center;gap:0.5rem;">
+          <i class="ph ph-arrow-left"></i> Dessinez puis cliquez sur Classifier
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classes -->
+  <div class="card d3" style="margin-top:1.25rem;">
+    <h4 style="font-family:var(--font-head);font-size:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+      <i class="ph ph-t-shirt" style="color:var(--p3);"></i> Les 10 catégories Fashion MNIST
+    </h4>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:0.5rem;">
+      {% set emojis = ["👕","👖","🧥","👗","🧣","👡","👚","👟","👜","👢"] %}
+      {% for cls in classes %}
+      <div style="background:var(--p3-light);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem;text-align:center;">
+        <div style="font-size:1.4rem;">{{ emojis[loop.index0] }}</div>
+        <div style="font-size:0.75rem;font-weight:600;margin-top:0.2rem;">{{cls}}</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);">Classe {{loop.index0}}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Galerie -->
+  {% if images %}
+  <div class="gallery-section">
+    <div class="gallery-title"><i class="ph ph-chart-bar" style="color:var(--p3);"></i> Résultats des architectures CNN</div>
+    <p class="gallery-sub">{{ images|length }} figures générées lors de l'entraînement sur Fashion MNIST.</p>
+    <div class="gallery-grid">
+      {% for img in images %}
+      <div class="gallery-item" onclick="openLightbox('{{ img.data }}','{{ img.name }}')">
+        <img src="{{ img.data }}" alt="{{ img.name }}" loading="lazy">
+        <div class="gallery-item-label"><i class="ph ph-image" style="margin-right:0.3rem;"></i>{{ img.name }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</main>
+
+<script>
+const canvas = document.getElementById('draw-canvas');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,280,280);
+ctx.strokeStyle = '#fff'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  if (e.touches) return {x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top};
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+canvas.addEventListener('mousedown', e=>{drawing=true;ctx.beginPath();const p=getPos(e);ctx.moveTo(p.x,p.y);});
+canvas.addEventListener('mousemove', e=>{if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
+canvas.addEventListener('mouseup', ()=>drawing=false);
+canvas.addEventListener('mouseleave', ()=>drawing=false);
+canvas.addEventListener('touchstart', e=>{e.preventDefault();drawing=true;ctx.beginPath();const p=getPos(e);ctx.moveTo(p.x,p.y);});
+canvas.addEventListener('touchmove', e=>{e.preventDefault();if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
+canvas.addEventListener('touchend', ()=>drawing=false);
+
+function clearCanvas() {
+  ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,280,280);
+  document.getElementById('result-p3-box').style.display='none';
+  document.getElementById('r3-placeholder').style.display='flex';
+}
+
+function getPixels() {
+  const off=document.createElement('canvas'); off.width=28; off.height=28;
+  const octx=off.getContext('2d'); octx.drawImage(canvas,0,0,28,28);
+  const d=octx.getImageData(0,0,28,28).data;
+  const pixels=[];
+  for(let i=0;i<d.length;i+=4) pixels.push(d[i]);
+  return pixels;
+}
+
+const EMOJIS=["👕","👖","🧥","👗","🧣","👡","👚","👟","👜","👢"];
+
+async function classifyDrawing() {
+  const btn=document.getElementById('btn-classify');
+  const btnT=document.getElementById('btn-classify-text');
+  btn.disabled=true; btnT.innerHTML='<span class="spinner"></span> Analyse...';
+  try {
+    const res=await fetch('/api/predict_p3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pixels:getPixels()})});
+    const j=await res.json();
+    if(j.error){alert('Erreur: '+j.error);return;}
+    document.getElementById('r3-placeholder').style.display='none';
+    const box=document.getElementById('result-p3-box');
+    box.style.display='block';
+    document.getElementById('r3-emoji').textContent=EMOJIS[j.prediction]||'❓';
+    document.getElementById('r3-label').textContent=j.label;
+    document.getElementById('r3-conf').textContent='Confiance : '+j.confidence+'%';
+    const top3=document.getElementById('top3-container');
+    top3.innerHTML='';
+    j.top3.forEach(item=>{
+      top3.innerHTML+=`<div class="top3-item"><div class="top3-label"><span>${item.class}</span><span>${item.prob}%</span></div><div class="top3-bar-wrap"><div class="top3-bar" style="width:0%" data-w="${item.prob}"></div></div></div>`;
+    });
+    setTimeout(()=>document.querySelectorAll('.top3-bar').forEach(b=>b.style.width=b.dataset.w+'%'),100);
+  } catch(err){alert('Erreur: '+err.message);}
+  finally{btn.disabled=false;btnT.innerHTML='<i class="ph ph-magnifying-glass"></i> Classifier';}
+}
+</script>
+{% endblock %}

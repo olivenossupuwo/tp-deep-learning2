@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Partie 1 – Modèles Classiques{% endblock %}
+{% block content %}
+<main>
+  <div class="hero" style="padding:2.5rem 1rem 1.5rem;">
+    <span class="badge badge-p1"><i class="ph ph-tree"></i> Partie 1 · ML Classique</span>
+    <h1 style="font-size:clamp(1.7rem,4.5vw,2.8rem);">Modèles d'<em>Ensemble</em></h1>
+    <p>Prédisez la souscription d'un client à un dépôt à terme à partir de ses caractéristiques socio-économiques.</p>
+  </div>
+
+  <!-- Contexte -->
+  <div class="card d1" style="margin-bottom:1.25rem;border-left:3px solid var(--p1);">
+    <div style="display:flex;align-items:flex-start;gap:1rem;">
+      <i class="ph ph-info" style="color:var(--p1);font-size:1.4rem;margin-top:0.1rem;flex-shrink:0;"></i>
+      <div>
+        <h3 style="font-family:var(--font-head);font-size:1.1rem;margin-bottom:0.5rem;">Contexte du problème</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;">Une banque portugaise souhaite prédire si un client souscrira à un <strong style="color:var(--text);">dépôt à terme</strong> suite à un appel téléphonique. Le dataset contient <strong style="color:var(--text);">41 188 clients</strong> et <strong style="color:var(--text);">20 variables</strong>. Les classes sont déséquilibrées (~89% non, ~11% oui) — l'AUC-ROC et le F1-score sont les métriques adaptées.</p>
+        <div style="display:flex;gap:2rem;margin-top:1rem;flex-wrap:wrap;">
+          <div><div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Meilleur AUC</div><div style="font-family:var(--font-head);font-size:1.3rem;color:var(--p1);font-weight:600;">~0.93</div></div>
+          <div><div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Classes</div><div style="font-family:var(--font-head);font-size:1.3rem;color:var(--p1);font-weight:600;">2</div></div>
+          <div><div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Variables</div><div style="font-family:var(--font-head);font-size:1.3rem;color:var(--p1);font-weight:600;">20</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prédiction -->
+  <div class="card d2">
+    <h3 style="font-family:var(--font-head);font-size:1.2rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.5rem;">
+      <i class="ph ph-magic-wand" style="color:var(--p1);"></i> Faire une prédiction
+    </h3>
+    <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:1.3rem;">Renseignez les informations du client et choisissez le modèle.</p>
+
+    <div class="model-selector">
+      <button class="model-btn active" onclick="setModel('rf',this)"><i class="ph ph-tree"></i> Random Forest</button>
+      <button class="model-btn" onclick="setModel('gb',this)"><i class="ph ph-lightning"></i> Gradient Boosting</button>
+      <button class="model-btn" onclick="setModel('cart',this)"><i class="ph ph-git-branch"></i> CART</button>
+    </div>
+
+    <form id="form-p1" onsubmit="predict(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>Âge</label><input type="number" name="age" value="40" min="18" max="100"></div>
+        <div class="form-group"><label>Emploi</label>
+          <select name="job">{% for o in ["admin.","blue-collar","entrepreneur","housemaid","management","retired","self-employed","services","student","technician","unemployed"] %}<option {% if o=="admin." %}selected{% endif %}>{{o}}</option>{% endfor %}</select>
+        </div>
+        <div class="form-group"><label>État civil</label>
+          <select name="marital">{% for o in ["married","single","divorced"] %}<option {% if o=="married" %}selected{% endif %}>{{o}}</option>{% endfor %}</select>
+        </div>
+        <div class="form-group"><label>Éducation</label>
+          <select name="education">{% for o in ["university.degree","high.school","basic.9y","basic.6y","basic.4y","professional.course","illiterate"] %}<option {% if o=="university.degree" %}selected{% endif %}>{{o}}</option>{% endfor %}</select>
+        </div>
+        <div class="form-group"><label>Crédit en défaut</label><select name="default"><option value="no" selected>Non</option><option value="yes">Oui</option></select></div>
+        <div class="form-group"><label>Prêt immobilier</label><select name="housing"><option value="no" selected>Non</option><option value="yes">Oui</option></select></div>
+        <div class="form-group"><label>Prêt personnel</label><select name="loan"><option value="no" selected>Non</option><option value="yes">Oui</option></select></div>
+        <div class="form-group"><label>Contact</label><select name="contact"><option value="cellular" selected>Portable</option><option value="telephone">Fixe</option></select></div>
+        <div class="form-group"><label>Mois</label>
+          <select name="month">{% for m in ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"] %}<option {% if m=="may" %}selected{% endif %}>{{m}}</option>{% endfor %}</select>
+        </div>
+        <div class="form-group"><label>Jour</label>
+          <select name="day_of_week">{% for d in ["mon","tue","wed","thu","fri"] %}<option {% if d=="mon" %}selected{% endif %}>{{d}}</option>{% endfor %}</select>
+        </div>
+        <div class="form-group"><label>Nb appels campagne</label><input type="number" name="campaign" value="2" min="1" max="50"></div>
+        <div class="form-group"><label>Jours depuis dernier contact</label><input type="number" name="pdays" value="999"></div>
+        <div class="form-group"><label>Contacts précédents</label><input type="number" name="previous" value="0"></div>
+        <div class="form-group"><label>Résultat préc.</label><select name="poutcome"><option value="nonexistent" selected>Inexistant</option><option value="failure">Échec</option><option value="success">Succès</option></select></div>
+        <div class="form-group"><label>Taux variation emploi</label><input type="number" name="emp.var.rate" value="-1.8" step="0.1"></div>
+        <div class="form-group"><label>Indice prix conso</label><input type="number" name="cons.price.idx" value="93.2" step="0.01"></div>
+        <div class="form-group"><label>Indice confiance conso</label><input type="number" name="cons.conf.idx" value="-42.0" step="0.1"></div>
+        <div class="form-group"><label>Euribor 3 mois</label><input type="number" name="euribor3m" value="4.86" step="0.01"></div>
+        <div class="form-group"><label>Nb employés économie</label><input type="number" name="nr.employed" value="5191"></div>
+      </div>
+      <button type="submit" class="btn btn-p1" id="btn-p1"><i class="ph ph-magic-wand"></i> <span id="btn-p1-text">Prédire</span></button>
+    </form>
+
+    <div class="result-box" id="result-p1">
+      <div class="result-label" id="r1-label"></div>
+      <div style="color:var(--text-muted);font-size:0.85rem;" id="r1-info"></div>
+      <div class="prob-bar-wrap"><div class="prob-bar" id="r1-bar" style="width:0%"></div></div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.4rem;" id="r1-prob"></div>
+    </div>
+  </div>
+
+  <!-- Infos modèles -->
+  <div class="card-grid" style="margin-top:1.25rem;">
+    <div class="card d3" style="border-left:3px solid var(--p1);">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><i class="ph-bold ph-tree" style="color:var(--p1);"></i><strong>Random Forest</strong></div>
+      <p style="color:var(--text-muted);font-size:0.85rem;">Agrégation de N arbres CART entraînés sur des sous-ensembles aléatoires. Robuste au surapprentissage.</p>
+      <div style="margin-top:0.7rem;font-size:0.82rem;">AUC ≈ <strong style="color:var(--p1);">0.93</strong></div>
+    </div>
+    <div class="card d3" style="border-left:3px solid var(--p1);">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><i class="ph-bold ph-lightning" style="color:var(--p1);"></i><strong>Gradient Boosting</strong></div>
+      <p style="color:var(--text-muted);font-size:0.85rem;">Arbres entraînés séquentiellement, chacun corrigeant les erreurs du précédent. Très puissant avec early stopping.</p>
+      <div style="margin-top:0.7rem;font-size:0.82rem;">AUC ≈ <strong style="color:var(--p1);">0.93</strong></div>
+    </div>
+    <div class="card d4" style="border-left:3px solid var(--p1);">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><i class="ph-bold ph-git-branch" style="color:var(--p1);"></i><strong>CART Optimisé</strong></div>
+      <p style="color:var(--text-muted);font-size:0.85rem;">Arbre de décision unique optimisé par GridSearchCV. Plus interprétable mais moins performant.</p>
+      <div style="margin-top:0.7rem;font-size:0.82rem;">AUC ≈ <strong style="color:var(--text-muted);">0.80</strong></div>
+    </div>
+  </div>
+
+  <!-- Galerie -->
+  {% if images %}
+  <div class="gallery-section">
+    <div class="gallery-title"><i class="ph ph-chart-line" style="color:var(--p1);"></i> Résultats & Visualisations</div>
+    <p class="gallery-sub">{{ images|length }} figures générées lors de l'analyse. Cliquez pour agrandir.</p>
+    <div class="gallery-grid">
+      {% for img in images %}
+      <div class="gallery-item" onclick="openLightbox('{{ img.data }}','{{ img.name }}')">
+        <img src="{{ img.data }}" alt="{{ img.name }}" loading="lazy">
+        <div class="gallery-item-label"><i class="ph ph-image" style="margin-right:0.3rem;"></i>{{ img.name }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="gallery-section">
+    <div class="gallery-title"><i class="ph ph-image" style="color:var(--text-muted);"></i> Visualisations</div>
+    <p style="color:var(--text-muted);font-size:0.88rem;">Les figures apparaîtront ici après exécution des scripts de la Partie 1.</p>
+  </div>
+  {% endif %}
+</main>
+
+<script>
+let selectedModel = 'rf';
+function setModel(m, btn) {
+  selectedModel = m;
+  document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+async function predict(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-p1');
+  const btnT = document.getElementById('btn-p1-text');
+  btn.disabled = true;
+  btnT.innerHTML = '<span class="spinner"></span> Calcul...';
+  const form = document.getElementById('form-p1');
+  const features = {};
+  new FormData(form).forEach((v,k) => features[k] = v);
+  try {
+    const res = await fetch('/api/predict_p1', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:selectedModel,features})});
+    const j = await res.json();
+    const box = document.getElementById('result-p1');
+    box.classList.add('show');
+    const label = document.getElementById('r1-label');
+    label.innerHTML = j.prediction===1
+      ? '<i class="ph-bold ph-check-circle"></i> ' + j.label
+      : '<i class="ph-bold ph-x-circle"></i> ' + j.label;
+    label.className = 'result-label ' + (j.prediction===1?'yes':'no');
+    document.getElementById('r1-info').textContent = 'Modèle : ' + j.model;
+    document.getElementById('r1-prob').textContent = 'Probabilité de souscription : ' + j.probability + '%';
+    setTimeout(() => document.getElementById('r1-bar').style.width = j.probability + '%', 100);
+  } catch(err) { alert('Erreur : ' + err.message); }
+  finally { btn.disabled=false; btnT.innerHTML='<i class="ph ph-magic-wand"></i> Prédire'; }
+}
+</script>
+{% endblock %}

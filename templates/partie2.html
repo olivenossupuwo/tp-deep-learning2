@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Partie 2 – Réseau de Neurones{% endblock %}
+{% block content %}
+<main>
+  <div class="hero" style="padding:2.5rem 1rem 1.5rem;">
+    <span class="badge badge-p2"><i class="ph ph-brain"></i> Partie 2 · Neural Network</span>
+    <h1 style="font-size:clamp(1.7rem,4.5vw,2.8rem);">Réseau de <em>Neurones</em></h1>
+    <p>Modèle ANN entraîné avec Keras/TensorFlow sur les 10 variables les plus importantes du dataset Bank Telemarketing.</p>
+  </div>
+
+  <!-- Architecture -->
+  <div class="card d1" style="margin-bottom:1.25rem;border-left:3px solid var(--p2);">
+    <h3 style="font-family:var(--font-head);font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+      <i class="ph ph-graph" style="color:var(--p2);"></i> Architecture du réseau
+    </h3>
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+      {% for name, detail, col in [("Input 10","10 features","var(--p2)"),("Dense 64","ReLU","#8b5cf6"),("BatchNorm","+ Drop 0.3","#7c3aed"),("Dense 32","ReLU","#6d28d9"),("Dense 16","ReLU","#5b21b6"),("Sigmoid","Output","var(--p3)")] %}
+      <div style="text-align:center;">
+        <div style="background:var(--p2-light);border:1.5px solid var(--border);border-radius:10px;padding:0.5rem 0.8rem;min-width:80px;">
+          <div style="font-weight:700;font-size:0.82rem;color:{{col}};">{{name}}</div>
+          <div style="font-size:0.68rem;color:var(--text-muted);">{{detail}}</div>
+        </div>
+      </div>
+      {% if not loop.last %}<i class="ph ph-arrow-right" style="color:var(--text-light);"></i>{% endif %}
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:2rem;margin-top:1.2rem;flex-wrap:wrap;">
+      <div><div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Optimizer</div><div style="font-family:var(--font-head);font-size:1rem;color:var(--p2);">Adam (lr=0.001)</div></div>
+      <div><div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Loss</div><div style="font-family:var(--font-head);font-size:1rem;color:var(--p2);">Binary Crossentropy</div></div>
+      <div><div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">AUC-ROC</div><div style="font-family:var(--font-head);font-size:1rem;color:var(--p1);">~0.93</div></div>
+    </div>
+  </div>
+
+  <!-- Prédiction -->
+  <div class="card d2">
+    <h3 style="font-family:var(--font-head);font-size:1.2rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.5rem;">
+      <i class="ph ph-magic-wand" style="color:var(--p2);"></i> Prédiction ANN
+    </h3>
+    <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:1.3rem;">Le modèle utilise les <strong style="color:var(--p2);">10 variables les plus importantes</strong> identifiées en Partie 1.</p>
+
+    <form id="form-p2" onsubmit="predictANN(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>Âge</label><input type="number" name="age" value="40" min="18" max="100"></div>
+        <div class="form-group"><label>Nb appels campagne</label><input type="number" name="campaign" value="2"></div>
+        <div class="form-group"><label>Jours depuis dernier contact</label><input type="number" name="pdays" value="999"></div>
+        <div class="form-group"><label>Contacts précédents</label><input type="number" name="previous" value="0"></div>
+        <div class="form-group"><label>Taux variation emploi</label><input type="number" name="emp.var.rate" value="-1.8" step="0.1"></div>
+        <div class="form-group"><label>Indice prix conso</label><input type="number" name="cons.price.idx" value="93.2" step="0.01"></div>
+        <div class="form-group"><label>Indice confiance conso</label><input type="number" name="cons.conf.idx" value="-42.0" step="0.1"></div>
+        <div class="form-group"><label>Euribor 3 mois</label><input type="number" name="euribor3m" value="4.86" step="0.01"></div>
+        <div class="form-group"><label>Nb employés économie</label><input type="number" name="nr.employed" value="5191"></div>
+        <div class="form-group"><label>Contact</label><select name="contact"><option value="cellular" selected>Portable</option><option value="telephone">Fixe</option></select></div>
+      </div>
+      <button type="submit" class="btn btn-p2" id="btn-p2"><i class="ph ph-brain"></i> <span id="btn-p2-text">Prédire avec l'ANN</span></button>
+    </form>
+
+    <div class="result-box" id="result-p2">
+      <div class="result-label" id="r2-label"></div>
+      <div style="color:var(--text-muted);font-size:0.85rem;" id="r2-info"></div>
+      <div class="prob-bar-wrap"><div class="prob-bar" id="r2-bar" style="width:0%;background:linear-gradient(90deg,var(--p2),#a78bfa);"></div></div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.4rem;" id="r2-prob"></div>
+    </div>
+  </div>
+
+  <!-- Variables importantes -->
+  <div class="card d3" style="margin-top:1.25rem;">
+    <h4 style="font-family:var(--font-head);font-size:1rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;">
+      <i class="ph ph-ranking" style="color:var(--p2);"></i> Variables les plus importantes
+    </h4>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0.5rem;">
+      {% for feat, stars in [("euribor3m","★★★★★"),("nr.employed","★★★★★"),("emp.var.rate","★★★★☆"),("cons.price.idx","★★★☆☆"),("pdays","★★★☆☆"),("previous","★★★☆☆"),("cons.conf.idx","★★☆☆☆"),("age","★★☆☆☆"),("campaign","★★☆☆☆"),("contact","★☆☆☆☆")] %}
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem 0.8rem;">
+        <div style="font-size:0.82rem;font-weight:600;">{{feat}}</div>
+        <div style="font-size:0.72rem;color:var(--p2);">{{stars}}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Galerie -->
+  {% if images %}
+  <div class="gallery-section">
+    <div class="gallery-title"><i class="ph ph-chart-line" style="color:var(--p2);"></i> Courbes d'apprentissage & Résultats</div>
+    <p class="gallery-sub">{{ images|length }} figures générées lors de l'entraînement du réseau de neurones.</p>
+    <div class="gallery-grid">
+      {% for img in images %}
+      <div class="gallery-item" onclick="openLightbox('{{ img.data }}','{{ img.name }}')">
+        <img src="{{ img.data }}" alt="{{ img.name }}" loading="lazy">
+        <div class="gallery-item-label"><i class="ph ph-image" style="margin-right:0.3rem;"></i>{{ img.name }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</main>
+
+<script>
+async function predictANN(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-p2');
+  const btnT = document.getElementById('btn-p2-text');
+  btn.disabled = true;
+  btnT.innerHTML = '<span class="spinner"></span> Inférence...';
+  const features = {};
+  new FormData(document.getElementById('form-p2')).forEach((v,k) => features[k]=v);
+  try {
+    const res = await fetch('/api/predict_p2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features})});
+    const j = await res.json();
+    const box = document.getElementById('result-p2');
+    box.classList.add('show');
+    const label = document.getElementById('r2-label');
+    label.innerHTML = j.prediction===1
+      ? '<i class="ph-bold ph-check-circle"></i> ' + j.label
+      : '<i class="ph-bold ph-x-circle"></i> ' + j.label;
+    label.className = 'result-label ' + (j.prediction===1?'yes':'no');
+    document.getElementById('r2-info').textContent = 'Modèle : ' + j.model;
+    document.getElementById('r2-prob').textContent = 'Probabilité : ' + j.probability + '%';
+    setTimeout(() => document.getElementById('r2-bar').style.width = j.probability + '%', 100);
+  } catch(err) { alert('Erreur : ' + err.message); }
+  finally { btn.disabled=false; btnT.innerHTML='<i class="ph ph-brain"></i> Prédire avec l\'ANN'; }
+}
+</script>
+{% endblock %}

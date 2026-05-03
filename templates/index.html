@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Accueil – TP Deep Learning ENSY{% endblock %}
+{% block content %}
+<main>
+  <div class="hero">
+    <span class="badge"><i class="ph ph-graduation-cap"></i> ENSY DIPES2 · 2025-2026</span>
+    <h1>Intelligence Artificielle 2<br><em>Deep Learning</em></h1>
+    <p>Exploration interactive des modèles ML classiques, réseaux de neurones et architectures de deep learning sur des données réelles.</p>
+  </div>
+
+  <div class="card-grid">
+    <a href="/partie1" class="part-card p1 d1">
+      <div class="part-card-top">
+        <div class="part-icon-wrap"><i class="ph-bold ph-tree"></i></div>
+        <div>
+          <div class="part-num">Partie 1</div>
+          <h3>Modèles Classiques</h3>
+        </div>
+      </div>
+      <p>Prédiction de souscription bancaire avec CART, Random Forest et Gradient Boosting optimisés par validation croisée.</p>
+      <div class="tags">
+        <span class="tag">CART</span>
+        <span class="tag">Random Forest</span>
+        <span class="tag">Gradient Boosting</span>
+        <span class="tag">ROC-AUC</span>
+      </div>
+      <i class="ph ph-arrow-up-right part-arrow"></i>
+    </a>
+
+    <a href="/partie2" class="part-card p2 d2">
+      <div class="part-card-top">
+        <div class="part-icon-wrap"><i class="ph-bold ph-brain"></i></div>
+        <div>
+          <div class="part-num">Partie 2</div>
+          <h3>Réseau de Neurones</h3>
+        </div>
+      </div>
+      <p>Modèle ANN entraîné avec Keras et TensorFlow sur les 10 variables les plus importantes du dataset Bank Telemarketing.</p>
+      <div class="tags">
+        <span class="tag">Keras</span>
+        <span class="tag">TensorFlow</span>
+        <span class="tag">Dense</span>
+        <span class="tag">Dropout</span>
+      </div>
+      <i class="ph ph-arrow-up-right part-arrow"></i>
+    </a>
+
+    <a href="/partie3" class="part-card p3 d3">
+      <div class="part-card-top">
+        <div class="part-icon-wrap"><i class="ph-bold ph-images"></i></div>
+        <div>
+          <div class="part-num">Partie 3</div>
+          <h3>Deep Learning CNN</h3>
+        </div>
+      </div>
+      <p>Classification d'images Fashion MNIST avec LeNet-5, VGGNet simplifié et ResNet avec skip connections.</p>
+      <div class="tags">
+        <span class="tag">CNN</span>
+        <span class="tag">LeNet-5</span>
+        <span class="tag">VGGNet</span>
+        <span class="tag">ResNet</span>
+      </div>
+      <i class="ph ph-arrow-up-right part-arrow"></i>
+    </a>
+  </div>
+
+  <div class="card d4">
+    <div class="stats-strip">
+      <div>
+        <div class="stat-val" style="color:var(--p1);">41 188</div>
+        <div class="stat-label">Instances d'entraînement</div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="stat-val" style="color:var(--p2);">9+</div>
+        <div class="stat-label">Modèles entraînés</div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="stat-val" style="color:var(--p3);">70 000</div>
+        <div class="stat-label">Images Fashion MNIST</div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="stat-val" style="color:var(--p1);">24</div>
+        <div class="stat-label">Figures générées</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-grid" style="margin-top:1.25rem;">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.7rem;">
+        <i class="ph ph-bank" style="color:var(--p1);font-size:1.2rem;"></i>
+        <h4 style="font-family:var(--font-head);font-size:1rem;">Bank Telemarketing (UCI)</h4>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.87rem;">Campagne télémarketing d'une banque portugaise. Prédiction de souscription à un dépôt à terme. 41 188 clients, 20 variables socio-économiques.</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.7rem;">
+        <i class="ph ph-t-shirt" style="color:var(--p3);font-size:1.2rem;"></i>
+        <h4 style="font-family:var(--font-head);font-size:1rem;">Fashion MNIST</h4>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.87rem;">70 000 images 28×28 pixels en niveaux de gris, réparties en 10 catégories de vêtements. Benchmark standard pour les CNN.</p>
+    </div>
+  </div>
+</main>
+{% endblock %}
