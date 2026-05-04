@@ -13,11 +13,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 app = Flask(__name__)
 MODELS = {}
 
-# 9 colonnes numériques connues du scaler
 NUM_COLS = ['age', 'campaign', 'pdays', 'previous', 'emp.var.rate',
             'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']
 
-# Colonnes catégorielles du dataset bank
 CAT_COLS = ["job","marital","education","default","housing","loan",
             "contact","month","day_of_week","poutcome"]
 
@@ -37,8 +35,9 @@ def load_models():
                 MODELS[key] = joblib.load(path)
 
         if os.path.exists("models/telemarketing.pkl"):
-            meta = joblib.load("models/telemarketing.pkl")
-            MODELS["ann_meta"] = meta
+            MODELS["ann_meta"] = joblib.load("models/telemarketing.pkl")
+
+        if os.path.exists("models/telemarketing.keras"):
             try:
                 import tensorflow as tf
                 MODELS["ann"] = tf.keras.models.load_model("models/telemarketing.keras")
@@ -50,13 +49,13 @@ def load_models():
             try:
                 import tensorflow as tf
                 MODELS["fashion"] = tf.keras.models.load_model("models/best_fashion.keras")
-                print("  ✔ Fashion CNN chargé")
+                print("  ✔ Fashion chargé")
             except Exception as e:
                 print(f"  ⚠ Fashion: {e}")
 
         print("✅ Modèles chargés.")
     except Exception as e:
-        print(f"⚠ Erreur chargement : {e}")
+        print(f"⚠ Erreur : {e}")
 
 load_models()
 
@@ -65,13 +64,7 @@ FASHION_CLASSES = ["T-shirt/top","Pantalon","Pull","Robe","Manteau",
 
 
 def build_full_vector(features_dict, feature_names, scaler):
-    """
-    Construit le vecteur complet de 46 features scalé.
-    - Scale les 9 colonnes numériques avec le scaler
-    - Encode les dummies manuellement
-    - Retourne shape (1, 46)
-    """
-    # 1. Récupérer les valeurs numériques
+    """Construit le vecteur complet de 46 features scalé → shape (1, 46)."""
     num_vals = {}
     for col in NUM_COLS:
         try:
@@ -79,27 +72,22 @@ def build_full_vector(features_dict, feature_names, scaler):
         except:
             num_vals[col] = 0.0
 
-    # 2. Scaler les 9 colonnes numériques
     X_num = pd.DataFrame([num_vals])[NUM_COLS].astype(float)
-    X_num_scaled = scaler.transform(X_num)[0]  # shape (9,)
+    X_num_scaled = scaler.transform(X_num)[0]
 
-    # 3. Construire le vecteur complet de 46 à zéro
     X_full = np.zeros(len(feature_names), dtype=float)
 
-    # 4. Remplir les colonnes numériques scalées
     for i, col in enumerate(NUM_COLS):
         if col in feature_names:
             X_full[feature_names.index(col)] = X_num_scaled[i]
 
-    # 5. Remplir les colonnes dummy
-    #    ex: contact=telephone → contact_telephone = 1
     for col, val in features_dict.items():
         if col in CAT_COLS:
             dummy_col = f"{col}_{val}"
             if dummy_col in feature_names:
                 X_full[feature_names.index(dummy_col)] = 1.0
 
-    return X_full.reshape(1, -1)  # shape (1, 46)
+    return X_full.reshape(1, -1).astype(np.float32)
 
 
 def build_input_dataframe(features_dict, feature_names):
@@ -128,13 +116,10 @@ def build_input_dataframe(features_dict, feature_names):
 
 
 def get_images(part_num):
+    """Charge les images depuis figures/partieN/ dans le repo."""
     images = []
-    candidates = [
-        f"../partie{part_num}/outputs/figures",
-        f"partie{part_num}/outputs/figures",
-    ]
-    fig_path = next((d for d in candidates if os.path.exists(d)), None)
-    if not fig_path:
+    fig_path = f"figures/partie{part_num}"
+    if not os.path.exists(fig_path):
         return images
     for fname in sorted(os.listdir(fig_path)):
         if fname.lower().endswith((".png", ".jpg")):
@@ -143,7 +128,8 @@ def get_images(part_num):
                     b64 = base64.b64encode(f.read()).decode()
                 label = fname.rsplit(".", 1)[0]
                 label = "_".join(label.split("_")[1:]).replace("_", " ").title()
-                images.append({"name": label, "data": f"data:image/png;base64,{b64}"})
+                images.append({"name": label,
+                                "data": f"data:image/png;base64,{b64}"})
             except:
                 pass
     return images
@@ -167,7 +153,8 @@ def partie2():
 
 @app.route("/partie3")
 def partie3():
-    return render_template("partie3.html", classes=FASHION_CLASSES, images=get_images(3))
+    return render_template("partie3.html", classes=FASHION_CLASSES,
+                           images=get_images(3))
 
 
 # =============================================================
@@ -203,15 +190,12 @@ def predict_p2():
         ann           = MODELS.get("ann")
         if not ann:
             return jsonify({"error": "Modèle ANN non disponible"}), 400
-
         scaler        = MODELS.get("scaler")
         feature_names = MODELS.get("feature_names", [])
         features      = data.get("features", {})
 
-        # Construire le vecteur complet de 46 features scalé → shape (1, 46)
         X_full = build_full_vector(features, feature_names, scaler)
 
-        # Le modèle sauvegardé attend 46 features en entrée
         prob = float(ann.predict(X_full, verbose=0)[0][0])
         pred = int(prob >= 0.5)
         return jsonify({
@@ -235,7 +219,7 @@ def predict_p3():
         fashion = MODELS.get("fashion")
         if not fashion:
             return jsonify({"error": "Modèle Fashion non disponible"}), 400
-        X     = np.array(pixels, dtype="float32").reshape(1, 28, 28, 1) / 255.0
+        X     = np.array(pixels, dtype=np.float32).reshape(1, 28, 28, 1) / 255.0
         probs = fashion.predict(X, verbose=0)[0]
         pred  = int(np.argmax(probs))
         top3  = sorted(enumerate(probs), key=lambda x: -x[1])[:3]
